@@ -17,15 +17,6 @@ If you want to use this project or the custom frames for commercial events, busi
 
 ---
 
-## 🛠️ Project Structure
-
-```text
-├── index.html          # Main application code and logic
-├── README.md           # Terms of use and documentation
-└── assets/
-    └── s1.png          # Custom transparent photo frame (Protected asset)
-```
-
 ## 🚀 How to Run Locally
 
 1. Download or clone this repository to your computer.
