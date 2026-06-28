@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free 4-Cut Photobooth</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #f3f4f6; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+        video, canvas { background: #000; border-radius: 8px; max-width: 100%; }
+        .controls { margin: 20px 0; display: flex; gap: 10px; justify-content: center; }
+        button, label { background: #2563eb; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #1d4ed8; }
+        #frameSelect { padding: 10px; border-radius: 5px; }
+        #previewContainer { margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <h1>📸 Free 4-Cut Photobooth</h1>
+    <p>Select your frame, take 4 photos, and download your strip!</p>
+
+    <div class="container">
+        <div>
+            <video id="video" width="320" height="240" autoplay playsinline></video>
+            <div class="controls">
+                <!-- Updated dropdown to strictly use your s1.png file -->
+                <select id="frameSelect">
+                    <option value="assets/s1.png">Custom Frame (s1)</option>
+                </select>
+                <button id="captureBtn">Take Photo (0/4)</button>
+            </div>
+        </div>
+
+        <div id="previewContainer">
+            <canvas id="boothCanvas" width="400" height="1200" style="display:none;"></canvas>
+            <img id="finalDownloadImg" style="max-height: 500px; border: 4px solid #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display:none;" alt="Your 4-cut strip">
+            <br><br>
+            <button id="downloadBtn" style="display:none;">📥 Download Strip</button>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const captureBtn = document.getElementById('captureBtn');
+        const frameSelect = document.getElementById('frameSelect');
+        const canvas = document.getElementById('boothCanvas');
+        const ctx = canvas.getContext('2d');
+        const finalImg = document.getElementById('finalDownloadImg');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        let photos = [];
+        const maxPhotos = 4;
+
+        // 1. Request Webcam Access
+        navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false })
+            .then(stream => { video.srcObject = stream; })
+            .catch(err => { alert("Webcam access is required to use this photobooth."); });
+
+        // 2. Capture Logic
+        captureBtn.addEventListener('click', () => {
+            if (photos.length >= maxPhotos) return;
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 320;
+            tempCanvas.height = 240;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Mirror flip user preview
+            tempCtx.translate(tempCanvas.width, 0);
+            tempCtx.scale(-1, 1);
+            tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+
+            photos.push(tempCanvas);
+            captureBtn.innerText = `Take Photo (${photos.length}/${maxPhotos})`;
+
+            if (photos.length === maxPhotos) {
+                generateFourCut();
+            }
+        });
+
+        // 3. Compile Photos and Overlap Frame
+        function generateFourCut() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const photoW = 340;
+            const photoH = 245;
+            const startX = 30;
+            // Vertical positions for the 4 slots down the strip
+            const yPositions =; 
+
+            photos.forEach((photo, index) => {
+                ctx.drawImage(photo, startX, yPositions[index], photoW, photoH);
+            });
+
+            // Loads your s1.png file directly from the assets folder
+            const frameImg = new Image();
+            frameImg.src = frameSelect.value;
+            frameImg.onload = function() {
+                ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
+                
+                finalImg.src = canvas.toDataURL('image/png');
+                finalImg.style.display = 'inline-block';
+                downloadBtn.style.display = 'inline-block';
+                
+                photos = [];
+                captureBtn.innerText = "Take Photo (0/4)";
+            };
+        }
+
+        // 4. Download Trigger
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = '4-cut-photo.png';
+            link.href = finalImg.src;
+            link.click();
+        });
+    </script>
+</body>
+</html>
